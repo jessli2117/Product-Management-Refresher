@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PM Process Walkthrough — From Idea to Launch</title>
+    <style>
+        :root {
+            --bg: #f8f9fb;
+            --bg2: #ffffff;
+            --bg3: #f3f4f6;
+            --text: #1a1d27;
+            --text2: #4b5563;
+            --text3: #9ca3af;
+            --accent: #6366f1;
+            --accent2: #4f46e5;
+            --green: #16a34a;
+            --yellow: #d97706;
+            --blue: #2563eb;
+            --red: #dc2626;
+            --border: #e5e7eb;
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 80px 20px 60px;
+            background: linear-gradient(180deg, rgba(99,102,241,0.12) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+
+        .hero h1 span { color: var(--accent2); }
+
+        .hero p {
+            color: var(--text2);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto 24px;
+        }
+
+        .hero .badge {
+            display: inline-block;
+            background: var(--bg3);
+            color: var(--accent2);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid rgba(99,102,241,0.2);
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Table of Contents */
+        .toc {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            margin: 40px auto;
+            max-width: 860px;
+        }
+
+        .toc h2 { font-size: 1.3rem; margin-bottom: 16px; }
+
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 8px;
+        }
+
+        .toc-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text2);
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .toc-item:hover { background: var(--bg3); color: var(--text); }
+
+        .toc-num {
+            width: 28px;
+            height: 28px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        /* Phase Sections */
+        .phase {
+            margin: 60px auto;
+            max-width: 860px;
+        }
+
+        .phase-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .phase-number {
+            width: 48px;
+            height: 48px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .phase-header h2 { font-size: 1.5rem; font-weight: 700; }
+        .phase-header p { color: var(--text2); font-size: 0.9rem; }
+
+        .phase-duration {
+            margin-left: auto;
+            background: var(--bg3);
+            color: var(--accent2);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .phase-content { padding-left: 64px; }
+        @media (max-width: 600px) { .phase-content { padding-left: 0; } }
+
+        .phase-content h3 {
+            font-size: 1.1rem;
+            margin: 24px 0 12px;
+            color: var(--accent2);
+        }
+
+        .phase-content p, .phase-content li {
+            color: var(--text2);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .phase-content ul, .phase-content ol {
+            padding-left: 20px;
+            margin: 8px 0 16px;
+        }
+
+        .phase-content li { margin-bottom: 6px; }
+
+        /* Cards */
+        .card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin: 16px 0;
+        }
+
+        .card.tip { border-left: 4px solid var(--green); }
+        .card.warning { border-left: 4px solid var(--yellow); }
+        .card.framework { border-left: 4px solid var(--accent); }
+        .card.example { border-left: 4px solid var(--blue); }
+
+        .card-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .card.tip .card-label { color: var(--green); }
+        .card.warning .card-label { color: var(--yellow); }
+        .card.framework .card-label { color: var(--accent2); }
+        .card.example .card-label { color: var(--blue); }
+
+        .card p, .card li { color: var(--text2); font-size: 0.9rem; }
+
+        /* Framework Visual */
+        .fw-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin: 16px 0;
+        }
+
+        .fw-item {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 8px;
+            text-align: center;
+        }
+
+        .fw-item .letter { font-size: 1.4rem; font-weight: 800; color: var(--accent2); }
+        .fw-item .label { font-size: 0.7rem; color: var(--text3); margin-top: 4px; }
+
+        /* Checklist */
+        .checklist { list-style: none; padding: 0; }
+        .checklist li {
+            padding: 8px 0 8px 28px;
+            position: relative;
+            color: var(--text2);
+            font-size: 0.9rem;
+        }
+        .checklist li::before {
+            content: "□";
+            position: absolute;
+            left: 0;
+            color: var(--accent2);
+            font-size: 1.1rem;
+        }
+
+        /* Divider */
+        .divider {
+            border: none;
+            height: 1px;
+            background: var(--border);
+            margin: 48px 0;
+        }
+
+        /* Flow diagram */
+        .flow {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin: 16px 0;
+        }
+
+        .flow-step {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .flow-arrow { color: var(--accent2); font-size: 1.2rem; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 48px 20px;
+            border-top: 1px solid var(--border);
+            margin-top: 60px;
+            color: var(--text3);
+            font-size: 0.85rem;
+        }
+
+        .footer a { color: var(--accent2); text-decoration: none; }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: var(--accent2);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <span class="badge">The Double Diamond + Lean Framework</span>
+    <h1>From <span>Idea</span> to <span>Launch</span></h1>
+    <p>The complete product management process used by top PMs at Google, Amazon, Meta, and leading startups. A step-by-step guide from identifying a problem to shipping a product.</p>
+</div>
+
+<div class="toc container">
+    <h2>The 8 Phases</h2>
+    <div class="toc-grid">
+        <a href="#phase1" class="toc-item"><span class="toc-num">1</span> Discover &amp; Research</a>
+        <a href="#phase2" class="toc-item"><span class="toc-num">2</span> Define the Problem</a>
+        <a href="#phase3" class="toc-item"><span class="toc-num">3</span> Ideate Solutions</a>
+        <a href="#phase4" class="toc-item"><span class="toc-num">4</span> Validate &amp; Prototype</a>
+        <a href="#phase5" class="toc-item"><span class="toc-num">5</span> Plan &amp; Prioritize</a>
+        <a href="#phase6" class="toc-item"><span class="toc-num">6</span> Build &amp; Iterate</a>
+        <a href="#phase7" class="toc-item"><span class="toc-num">7</span> Launch</a>
+        <a href="#phase8" class="toc-item"><span class="toc-num">8</span> Measure &amp; Iterate</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card framework">
+        <div class="card-label">The Framework: Double Diamond + Lean Startup</div>
+        <p>This walkthrough combines the <strong>Double Diamond</strong> (discover → define → develop → deliver) with <strong>Lean Startup</strong> (build → measure → learn). This hybrid is the most popular approach at top tech companies because it balances user empathy with speed of execution.</p>
+        <div class="flow">
+            <div class="flow-step">Discover</div><span class="flow-arrow">→</span>
+            <div class="flow-step">Define</div><span class="flow-arrow">→</span>
+            <div class="flow-step">Ideate</div><span class="flow-arrow">→</span>
+            <div class="flow-step">Validate</div><span class="flow-arrow">→</span>
+            <div class="flow-step">Plan</div><span class="flow-arrow">→</span>
+            <div class="flow-step">Build</div><span class="flow-arrow">→</span>
+            <div class="flow-step">Launch</div><span class="flow-arrow">→</span>
+            <div class="flow-step">Iterate</div><span class="flow-arrow">↻</span>
+        </div>
+    </div>
+
+    <!-- Phase 1 -->
+    <div class="phase" id="phase1">
+        <div class="phase-header">
+            <div class="phase-number">1</div>
+            <div>
+                <h2>Discover &amp; Research</h2>
+                <p>Understand the problem space before jumping to solutions</p>
+            </div>
+            <span class="phase-duration">2-4 weeks</span>
+        </div>
+        <div class="phase-content">
+            <p>The biggest mistake PMs make is skipping this phase. Every failed product can be traced back to insufficient understanding of the problem, the user, or the market.</p>
+
+            <h3>What You Do</h3>
+            <ul>
+                <li><strong>User research:</strong> Conduct 10-15 user interviews. Use open-ended questions. Record and transcribe. Look for patterns in pain points, not feature requests.</li>
+                <li><strong>Market analysis:</strong> Size the market (TAM/SAM/SOM). Identify trends. Understand the competitive landscape — who else is solving this problem and how?</li>
+                <li><strong>Data mining:</strong> If you have an existing product, analyze usage data. Where do users drop off? What features are underused? What do support tickets say?</li>
+                <li><strong>Stakeholder interviews:</strong> Talk to sales, support, and leadership. What are they hearing from customers? What does the business need?</li>
+                <li><strong>Competitive teardowns:</strong> Use the top 3-5 competitors' products. Document strengths, weaknesses, and gaps.</li>
+            </ul>
+
+            <div class="card tip">
+                <div class="card-label">Pro Tip</div>
+                <p>Use <strong>The Mom Test</strong> approach: don't ask "Would you use this?" (they'll say yes to be nice). Ask about their current behavior: "How do you solve this problem today? What's the most annoying part? How much time/money does it cost you?"</p>
+            </div>
+
+            <h3>Key Deliverables</h3>
+            <ul class="checklist">
+                <li>User research synthesis (key themes and quotes)</li>
+                <li>User personas (2-3 primary personas based on real data)</li>
+                <li>Market sizing document (TAM, SAM, SOM)</li>
+                <li>Competitive landscape map</li>
+                <li>Problem hypothesis to validate</li>
+            </ul>
+        </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Phase 2 -->
+    <div class="phase" id="phase2">
+        <div class="phase-header">
+            <div class="phase-number">2</div>
+            <div>
+                <h2>Define the Problem</h2>
+                <p>Narrow from broad research to a specific, solvable problem</p>
+            </div>
+            <span class="phase-duration">1-2 weeks</span>
+        </div>
+        <div class="phase-content">
+            <p>You've done your research. Now synthesize it into a crystal-clear problem statement. A well-defined problem is half the solution.</p>
+
+            <h3>What You Do</h3>
+            <ul>
+                <li><strong>Synthesize research:</strong> Cluster findings into themes. Use affinity mapping to find the top 3-5 pain points.</li>
+                <li><strong>Write a problem statement:</strong> "[User persona] struggles with [specific problem] when trying to [goal], which results in [negative outcome]."</li>
+                <li><strong>Apply Jobs to Be Done:</strong> Frame it as a job: "When [situation], I want to [motivation], so I can [expected outcome]."</li>
+                <li><strong>Define success:</strong> What does solving this problem look like? What metric moves? For whom? By how much?</li>
+                <li><strong>Align stakeholders:</strong> Get buy-in on the problem before discussing solutions. This prevents endless solution debates later.</li>
+            </ul>
+
+            <div class="card framework">
+                <div class="card-label">Framework: Jobs to Be Done</div>
+                <p>People don't buy products — they hire them to do a job. Understanding the job unlocks the right solution.</p>
+                <div class="fw-grid">
+                    <div class="fw-item"><div class="letter">When</div><div class="label">Situation</div></div>
+                    <div class="fw-item"><div class="letter">I want</div><div class="label">Motivation</div></div>
+                    <div class="fw-item"><div class="letter">So I can</div><div class="label">Outcome</div></div>
+                </div>
+                <p><strong>Example:</strong> "When I'm commuting home and want to cook dinner, I want to quickly find a recipe using ingredients I already have, so I can avoid an extra grocery trip and still eat well."</p>
+            </div>
+
+            <div class="card warning">
+                <div class="card-label">Common Mistake</div>
+                <p>Defining the problem as "users need [your solution]." That's a solution disguised as a problem. The problem should be describable without mentioning your product. "Users waste 30 minutes per day context-switching between 5 communication tools" is a problem. "Users need a unified inbox" is a solution.</p>
+            </div>
+
+            <h3>Key Deliverables</h3>
+            <ul class="checklist">
+                <li>Problem statement (1-2 sentences)</li>
+                <li>JTBD statements for primary personas</li>
+                <li>Success criteria and target metrics</li>
+                <li>Stakeholder alignment (documented agreement on the problem)</li>
+            </ul>
+        </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Phase 3 -->
+    <div class="phase" id="phase3">
+        <div class="phase-header">
+            <div class="phase-number">3</div>
+            <div>
+                <h2>Ideate Solutions</h2>
+                <p>Generate many possible solutions before committing to one</p>
+            </div>
+            <span class="phase-duration">1-2 weeks</span>
+        </div>
+        <div class="phase-content">
+            <p>Now that the problem is clear, brainstorm widely before narrowing. The goal is to explore the solution space, not to commit to the first idea.</p>
+
+            <h3>What You Do</h3>
+            <ul>
+                <li><strong>Divergent brainstorming:</strong> Generate 10-20 solution ideas. Include wild ideas. No filtering yet. Involve design, engineering, and other perspectives.</li>
+                <li><strong>Design sprint (optional):</strong> Use Jake Knapp's Sprint method for a structured 5-day ideation process with the team.</li>
+                <li><strong>Competitive inspiration:</strong> How do adjacent products solve similar problems? Don't copy, but learn from patterns.</li>
+                <li><strong>Evaluate solutions:</strong> Use a Value vs Complexity matrix. Plot all ideas. Discuss as a team.</li>
+                <li><strong>Select top 2-3:</strong> Pick the most promising ideas to prototype and test. Don't commit to one yet.</li>
+            </ul>
+
+            <div class="card tip">
+                <div class="card-label">Pro Tip: "How Might We" Questions</div>
+                <p>Reframe problems as "How Might We" (HMW) questions to unlock creative solutions. "Users waste time switching between tools" becomes "How might we give users a unified view of all their communications?" Each HMW question opens a different solution direction.</p>
+            </div>
+
+            <h3>Amazon's Working Backwards Method</h3>
+            <p>Before building anything, write the press release for the finished product. This forces clarity on:</p>
+            <ol>
+                <li><strong>Who is the customer?</strong> Be specific.</li>
+                <li><strong>What is the customer problem?</strong> In their words.</li>
+                <li><strong>What is the solution?</strong> How does it work?</li>
+                <li><strong>Why should the customer care?</strong> What's the benefit?</li>
+                <li><strong>How does the customer get started?</strong> What's the first experience?</li>
+            </ol>
+            <p>If you can't write a compelling press release, the idea isn't clear enough yet.</p>
+
+            <h3>Key Deliverables</h3>
+            <ul class="checklist">
+                <li>Solution brainstorm document (10-20 ideas)</li>
+                <li>Value vs Complexity matrix</li>
+                <li>Top 2-3 solutions selected for validation</li>
+                <li>Internal press release (Working Backwards)</li>
+            </ul>
+        </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Phase 4 -->
+    <div class="phase" id="phase4">
+        <div class="phase-header">
+            <div class="phase-number">4</div>
+            <div>
+                <h2>Validate &amp; Prototype</h2>
+                <p>Test your assumptions before committing engineering resources</p>
+            </div>
+            <span class="phase-duration">2-3 weeks</span>
+        </div>
+        <div class="phase-content">
+            <p>This is where most PMs skip ahead to "let's just build it" — and waste months on the wrong thing. Validation is the highest-ROI activity in product management.</p>
+
+            <h3>What You Do</h3>
+            <ul>
+                <li><strong>Identify riskiest assumption:</strong> What must be true for this to work? That's what you test first. Not the whole product — the riskiest assumption.</li>
+                <li><strong>Build prototypes:</strong> Low-fidelity first (paper sketches, Figma clickthrough). Only go high-fidelity if needed for user testing.</li>
+                <li><strong>User testing:</strong> Put the prototype in front of 5-8 target users. Watch them use it. Don't explain — observe. After 5 users, you'll see 85% of usability issues.</li>
+                <li><strong>Wizard of Oz test:</strong> For complex features, simulate the experience manually before building it. (Example: Zappos founder tested demand by posting shoe photos online, then buying from stores and shipping manually.)</li>
+                <li><strong>Fake door test:</strong> Add a button or CTA for the feature. Measure how many users click. If nobody clicks, nobody wants it.</li>
+                <li><strong>Iterate:</strong> Prototype → test → learn → revise → test again. 2-3 rounds is typical.</li>
+            </ul>
+
+            <div class="card example">
+                <div class="card-label">Real-World Example: Dropbox</div>
+                <p>Drew Houston didn't build Dropbox first. He made a 3-minute video showing what the product WOULD do. The waitlist went from 5,000 to 75,000 overnight. He validated demand before writing a single line of code. That's the gold standard of validation.</p>
+            </div>
+
+            <div class="card framework">
+                <div class="card-label">Framework: The Riskiest Assumption Test (RAT)</div>
+                <p>List your assumptions. Rank by risk (impact if wrong × likelihood of being wrong). Test the top one first.</p>
+                <ol>
+                    <li>List all assumptions: "Users will pay for this." "Users understand the value proposition." "We can build this in 6 weeks."</li>
+                    <li>Rank by risk: Which assumption, if wrong, kills the project?</li>
+                    <li>Design the cheapest, fastest test for that assumption</li>
+                    <li>Set a pass/fail threshold BEFORE testing</li>
+                    <li>Test, learn, decide: proceed, pivot, or kill</li>
+                </ol>
+            </div>
+
+            <h3>Key Deliverables</h3>
+            <ul class="checklist">
+                <li>Prototype (Figma, paper, or coded MVP)</li>
+                <li>User testing report (5-8 users, key findings)</li>
+                <li>Validated or invalidated assumptions</li>
+                <li>Go/no-go decision on proceeding to build</li>
+            </ul>
+        </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Phase 5 -->
+    <div class="phase" id="phase5">
+        <div class="phase-header">
+            <div class="phase-number">5</div>
+            <div>
+                <h2>Plan &amp; Prioritize</h2>
+                <p>Define what to build, in what order, and how to measure success</p>
+            </div>
+            <span class="phase-duration">1-2 weeks</span>
+        </div>
+        <div class="phase-content">
+            <p>You've validated the idea. Now turn it into a buildable plan. This is where the PRD, roadmap, and sprint planning happen.</p>
+
+            <h3>Write the PRD</h3>
+            <p>The Product Requirements Document is the PM's primary artifact. Keep it concise (2-4 pages) and living (update as you learn).</p>
+            <ol>
+                <li><strong>Problem statement</strong> — What problem are we solving and for whom?</li>
+                <li><strong>Goals &amp; success metrics</strong> — What does success look like? OKRs or specific KPIs.</li>
+                <li><strong>User stories</strong> — "As a [user], I want [action] so that [benefit]"</li>
+                <li><strong>Requirements</strong> — Functional (what it does) and non-functional (performance, security, accessibility)</li>
+                <li><strong>Designs</strong> — Link to Figma mockups or wireframes</li>
+                <li><strong>Out of scope</strong> — Explicitly state what you're NOT building</li>
+                <li><strong>Open questions</strong> — Unknowns to resolve during build</li>
+                <li><strong>Timeline</strong> — Milestones, not precise dates</li>
+            </ol>
+
+            <h3>Prioritize with RICE</h3>
+            <div class="card framework">
+                <div class="card-label">Framework: RICE Scoring</div>
+                <p>Score = (Reach × Impact × Confidence) / Effort</p>
+                <div class="fw-grid">
+                    <div class="fw-item"><div class="letter">R</div><div class="label">Reach</div></div>
+                    <div class="fw-item"><div class="letter">I</div><div class="label">Impact</div></div>
+                    <div class="fw-item"><div class="letter">C</div><div class="label">Confidence</div></div>
+                    <div class="fw-item"><div class="letter">E</div><div class="label">Effort</div></div>
+                </div>
+                <p><strong>Reach:</strong> How many users per quarter? Use real numbers.<br>
+                <strong>Impact:</strong> How much does it move the metric? (3=massive, 2=high, 1=medium, 0.5=low)<br>
+                <strong>Confidence:</strong> How sure are you? (100%=data-backed, 80%=reasonable, 50%=guess)<br>
+                <strong>Effort:</strong> Person-months of work across all roles.</p>
+            </div>
+
+            <h3>Define the MVP</h3>
+            <p>The Minimum Viable Product is the smallest version that delivers the core value. Use MoSCoW to scope:</p>
+            <ul>
+                <li><strong>Must-have:</strong> Without these, the product doesn't solve the core problem</li>
+                <li><strong>Should-have:</strong> Important but the product works without them</li>
+                <li><strong>Could-have:</strong> Nice to have — v2 candidates</li>
+                <li><strong>Won't-have:</strong> Explicitly out of scope for this release</li>
+            </ul>
+
+            <h3>Key Deliverables</h3>
+            <ul class="checklist">
+                <li>PRD reviewed and approved by stakeholders</li>
+                <li>RICE-scored backlog</li>
+                <li>MVP scope defined (MoSCoW)</li>
+                <li>Engineering estimates and sprint plan</li>
+                <li>OKRs for the initiative</li>
+            </ul>
+        </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Phase 6 -->
+    <div class="phase" id="phase6">
+        <div class="phase-header">
+            <div class="phase-number">6</div>
+            <div>
+                <h2>Build &amp; Iterate</h2>
+                <p>Execute the plan with your engineering and design team</p>
+            </div>
+            <span class="phase-duration">4-12 weeks</span>
+        </div>
+        <div class="phase-content">
+            <p>Building is where the PM shifts from "architect" to "air traffic controller." Your job is to keep the team unblocked, scope tight, and quality high.</p>
+
+            <h3>Your Daily Responsibilities During Build</h3>
+            <ul>
+                <li><strong>Attend standup:</strong> Listen for blockers. If an engineer is stuck on a requirement ambiguity, resolve it within hours, not days.</li>
+                <li><strong>Scope management:</strong> Features ALWAYS try to grow. Your job is to protect the MVP scope. Every addition must justify itself against the timeline.</li>
+                <li><strong>Design review:</strong> Review designs before they go to engineering. Catch issues early when they're cheap to fix.</li>
+                <li><strong>QA partnership:</strong> Write acceptance criteria that QA can test. Review edge cases together. Don't just throw specs over the wall.</li>
+                <li><strong>Stakeholder updates:</strong> Weekly status to leadership. Surface risks early. No surprises.</li>
+                <li><strong>Dog-fooding:</strong> Use the product daily as it's being built. You should be the first user to find bugs.</li>
+            </ul>
+
+            <div class="card warning">
+                <div class="card-label">Common Trap: Scope Creep</div>
+                <p>A stakeholder says: "While you're building this, can we also add [feature]?" Your answer: "Great idea. Let me add it to the backlog for v2. For this release, we're focused on [MVP goal] to ship by [date]." Write it down, acknowledge it, defer it. Scope creep is the #1 killer of product timelines.</p>
+            </div>
+
+            <h3>Sprint Cadence (2-week sprints)</h3>
+            <div class="flow">
+                <div class="flow-step">Sprint Planning</div><span class="flow-arrow">→</span>
+                <div class="flow-step">Daily Standups</div><span class="flow-arrow">→</span>
+                <div class="flow-step">Mid-Sprint Check</div><span class="flow-arrow">→</span>
+                <div class="flow-step">Sprint Review</div><span class="flow-arrow">→</span>
+                <div class="flow-step">Retrospective</div><span class="flow-arrow">↻</span>
+            </div>
+
+            <h3>Key Deliverables</h3>
+            <ul class="checklist">
+                <li>Working software (incrementally, each sprint)</li>
+                <li>Updated backlog reflecting scope decisions</li>
+                <li>Bug triage and resolution log</li>
+                <li>Stakeholder status updates (weekly)</li>
+                <li>Launch readiness checklist started</li>
+            </ul>
+        </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Phase 7 -->
+    <div class="phase" id="phase7">
+        <div class="phase-header">
+            <div class="phase-number">7</div>
+            <div>
+                <h2>Launch</h2>
+                <p>Ship the product to real users with a plan for every scenario</p>
+            </div>
+            <span class="phase-duration">1-2 weeks</span>
+        </div>
+        <div class="phase-content">
+            <p>Launch is not just "deploy the code." It's a cross-functional event involving engineering, marketing, sales, support, and legal. The PM orchestrates all of it.</p>
+
+            <h3>Pre-Launch Checklist</h3>
+            <ul class="checklist">
+                <li>All critical bugs resolved; known issues documented</li>
+                <li>Performance testing passed (load test at 2x expected traffic)</li>
+                <li>Security review completed</li>
+                <li>Legal/compliance sign-off (if applicable)</li>
+                <li>Support documentation written and CS team briefed</li>
+                <li>Marketing materials ready (blog post, social, email)</li>
+                <li>Sales enablement materials distributed</li>
+                <li>Analytics instrumented (events, funnels, dashboards)</li>
+                <li>Rollback plan tested and documented</li>
+                <li>On-call schedule established for launch week</li>
+            </ul>
+
+            <h3>Phased Rollout Strategy</h3>
+            <p>Never launch to 100% on day one. Use feature flags for a gradual rollout:</p>
+            <ol>
+                <li><strong>Internal dogfood (1-2 days):</strong> Your team uses it. Catch obvious issues.</li>
+                <li><strong>Beta users 5% (3-5 days):</strong> Opt-in beta group. Monitor error rates, support tickets, user feedback.</li>
+                <li><strong>Expand to 25% (3-5 days):</strong> Check metrics against targets. Resolve any issues.</li>
+                <li><strong>Go to 50% (2-3 days):</strong> Performance at scale. A/B test if applicable.</li>
+                <li><strong>Full 100% launch:</strong> Marketing announcement. All hands on deck for support.</li>
+            </ol>
+
+            <div class="card tip">
+                <div class="card-label">Launch Day Checklist</div>
+                <ul>
+                    <li>Dashboard open and monitored continuously</li>
+                    <li>Dedicated Slack channel for launch issues</li>
+                    <li>Engineering on standby for hotfixes</li>
+                    <li>Support team actively monitoring tickets</li>
+                    <li>PM personally using the feature in production</li>
+                    <li>Rollback criteria defined: "If error rate exceeds X%, roll back immediately"</li>
+                </ul>
+            </div>
+
+            <h3>Key Deliverables</h3>
+            <ul class="checklist">
+                <li>Launch announcement (internal + external)</li>
+                <li>Completed rollout to 100%</li>
+                <li>Launch metrics snapshot (day 1, day 3, day 7)</li>
+                <li>Issues log with resolution status</li>
+            </ul>
+        </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Phase 8 -->
+    <div class="phase" id="phase8">
+        <div class="phase-header">
+            <div class="phase-number">8</div>
+            <div>
+                <h2>Measure &amp; Iterate</h2>
+                <p>The product is live — now learn from real data and improve</p>
+            </div>
+            <span class="phase-duration">Ongoing</span>
+        </div>
+        <div class="phase-content">
+            <p>Launching is not the end — it's the beginning of learning. The best PMs are obsessive about post-launch data because that's when you discover what actually works.</p>
+
+            <h3>Post-Launch Activities</h3>
+            <ul>
+                <li><strong>Monitor metrics daily (first 2 weeks):</strong> Track your North Star metric, funnel metrics, and guardrail metrics. Compare to pre-launch baseline.</li>
+                <li><strong>Analyze user behavior:</strong> Are users using the feature as expected? Where do they drop off? What's surprising?</li>
+                <li><strong>Collect qualitative feedback:</strong> Support tickets, app store reviews, social media mentions, user interviews. Numbers tell you WHAT, users tell you WHY.</li>
+                <li><strong>Run retrospective:</strong> What went well? What didn't? What would you do differently? Document for the next launch.</li>
+                <li><strong>Plan v2:</strong> Based on data and feedback, prioritize improvements. The first version is never perfect — that's by design.</li>
+            </ul>
+
+            <div class="card framework">
+                <div class="card-label">Framework: Build → Measure → Learn (Lean Startup)</div>
+                <p>This is the cycle that never stops. Every launch feeds back into the next iteration.</p>
+                <div class="flow">
+                    <div class="flow-step">Ship v1</div><span class="flow-arrow">→</span>
+                    <div class="flow-step">Measure Impact</div><span class="flow-arrow">→</span>
+                    <div class="flow-step">Learn from Data</div><span class="flow-arrow">→</span>
+                    <div class="flow-step">Plan v2</div><span class="flow-arrow">→</span>
+                    <div class="flow-step">Ship v2</div><span class="flow-arrow">↻</span>
+                </div>
+            </div>
+
+            <h3>Key Metrics to Review</h3>
+            <ul>
+                <li><strong>Adoption:</strong> What % of eligible users are using the feature? Is it growing?</li>
+                <li><strong>Engagement:</strong> How often do they use it? How deeply?</li>
+                <li><strong>Retention:</strong> Do users come back after first use? D1, D7, D30 retention.</li>
+                <li><strong>Task success:</strong> Can users complete the core task? What's the error/abandonment rate?</li>
+                <li><strong>Satisfaction:</strong> NPS, CSAT, app store rating changes.</li>
+                <li><strong>Business impact:</strong> Revenue, conversion, cost savings — whatever the original OKR targeted.</li>
+            </ul>
+
+            <div class="card tip">
+                <div class="card-label">The Best PMs Do This</div>
+                <p>Write a "launch learnings" doc after every major launch. Include: what you hypothesized vs what actually happened, surprises, and what you'd change. Share it with the team. This compounds — after 10 launches, you have a playbook that makes you dramatically faster and more accurate.</p>
+            </div>
+
+            <h3>Kill Criteria</h3>
+            <p>Not everything should be iterated on. Define kill criteria upfront:</p>
+            <ul>
+                <li>If adoption is below X% after 30 days with marketing support → sunset the feature</li>
+                <li>If the feature hurts a guardrail metric (retention, NPS) → roll back and investigate</li>
+                <li>If the cost of maintaining it exceeds the value it creates → deprecate</li>
+            </ul>
+            <p>Killing features is as important as shipping them. Dead features create maintenance burden, confuse users, and slow your team down.</p>
+
+            <h3>Key Deliverables</h3>
+            <ul class="checklist">
+                <li>Post-launch metrics report (vs targets)</li>
+                <li>User feedback synthesis</li>
+                <li>Launch retrospective document</li>
+                <li>v2 backlog with prioritized improvements</li>
+                <li>Decision: iterate, expand, or sunset</li>
+            </ul>
+        </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="card framework" style="margin:40px 0;">
+        <div class="card-label">Summary: The Complete PM Process</div>
+        <div class="flow">
+            <div class="flow-step">1. Discover</div><span class="flow-arrow">→</span>
+            <div class="flow-step">2. Define</div><span class="flow-arrow">→</span>
+            <div class="flow-step">3. Ideate</div><span class="flow-arrow">→</span>
+            <div class="flow-step">4. Validate</div><span class="flow-arrow">→</span>
+            <div class="flow-step">5. Plan</div><span class="flow-arrow">→</span>
+            <div class="flow-step">6. Build</div><span class="flow-arrow">→</span>
+            <div class="flow-step">7. Launch</div><span class="flow-arrow">→</span>
+            <div class="flow-step">8. Iterate</div><span class="flow-arrow">↻</span>
+        </div>
+        <p style="margin-top:16px;"><strong>Key principles throughout:</strong></p>
+        <ol>
+            <li>Start with the user problem, not the solution</li>
+            <li>Validate assumptions before committing resources</li>
+            <li>Prioritize ruthlessly — say no more than you say yes</li>
+            <li>Ship small, learn fast, iterate relentlessly</li>
+            <li>Measure everything, but focus on the metrics that matter</li>
+            <li>Communicate constantly — no surprises for stakeholders</li>
+            <li>Every launch is a hypothesis to test, not a destination</li>
+        </ol>
+    </div>
+
+</div>
+
+<div class="footer">
+    <p>PM Process Walkthrough — Part of the <strong>PM Interview Refresher</strong></p>
+    <a href="index.html" class="back-link">← Back to PM Prep App</a>
+</div>
+
+</body>
+</html>

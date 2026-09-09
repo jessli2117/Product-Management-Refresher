@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Management Prep</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h1>Product Management Prep</h1>
+            <p class="subtitle">Interview Practice</p>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#" class="nav-link active" data-page="daily"><span class="nav-icon">&#9878;</span> Daily Practice</a></li>
+            <li><a href="#" class="nav-link" data-page="learnings"><span class="nav-icon">&#9733;</span> Learnings</a></li>
+            <li><a href="#" class="nav-link" data-page="frameworks"><span class="nav-icon">&#9881;</span> Frameworks</a></li>
+            <li><a href="#" class="nav-link" data-page="archive"><span class="nav-icon">&#128218;</span> Archive</a></li>
+            <li><a href="pm-process-walkthrough.html" class="nav-link" target="_blank"><span class="nav-icon">&#128640;</span> PM Process Guide</a></li>
+        </ul>
+
+        <div class="nav-section-label">Categories</div>
+        <div id="sidebarCategories"></div>
+
+        <div class="sidebar-footer">
+            <div class="streak-counter">
+                <span class="streak-number" id="streakCount">0</span>
+                <span class="streak-label">Day Streak</span>
+            </div>
+        </div>
+    </nav>
+
+    <button class="mobile-menu-toggle" id="menuToggle">&#9776;</button>
+
+    <main class="content" id="mainContent">
+        <!-- Daily Practice Page -->
+        <section class="page active" id="page-daily">
+            <div class="page-header">
+                <h2>Daily Practice</h2>
+                <p class="date-display" id="todayDate"></p>
+            </div>
+
+            <div class="daily-progress" id="dailyProgress">
+                <span>Today's progress:</span>
+                <span class="daily-progress-count" id="dailyCount">0</span>
+                <span>questions answered</span>
+                <button class="refresh-btn" id="refreshQuestionsBtn" title="Get fresh questions">&#8635; Refresh</button>
+            </div>
+
+            <div class="category-selector">
+                <label for="categorySelect">Choose Category:</label>
+                <select id="categorySelect">
+                    <option value="random">Random (All Categories)</option>
+                </select>
+                <button class="btn btn-primary" id="newQuestionBtn">New Question</button>
+            </div>
+
+            <div class="question-card" id="questionCard">
+                <div class="question-badge" id="questionBadge">Product Design</div>
+                <div class="question-sub-badge" id="questionSubBadge">User Experience</div>
+                <span class="difficulty-badge" id="difficultyBadge"></span>
+                <h3 class="question-text" id="questionText">Click "New Question" to start practicing!</h3>
+                <div class="difficulty-indicator" id="difficultyIndicator"></div>
+            </div>
+
+            <div class="answer-section" id="answerSection" style="display:none;">
+                <div class="tips-card">
+                    <h4>How to Impress the Interviewer</h4>
+                    <ul id="impressTips"></ul>
+                </div>
+
+                <div class="answer-card">
+                    <h4>Step-by-Step Answer Guide</h4>
+                    <div id="stepByStep"></div>
+                </div>
+
+                <div class="framework-card">
+                    <h4>Recommended Framework</h4>
+                    <div id="frameworkSuggestion"></div>
+                </div>
+
+                <div class="resources-card">
+                    <h4>Resources to Study</h4>
+                    <ul id="resourcesList"></ul>
+                </div>
+            </div>
+
+            <div class="practice-controls" id="practiceControls" style="display:none;">
+                <h4>Your Answer</h4>
+                <textarea id="userAnswer" placeholder="Type your answer here... Practice articulating your response clearly and concisely."></textarea>
+                <div class="control-buttons">
+                    <button class="btn btn-secondary" id="showAnswerBtn">Show Answer Guide</button>
+                    <button class="archive-icon-btn" id="saveToArchiveBtn" title="Save to Archive">&#128451;</button>
+                    <button class="btn btn-accent" id="nextQuestionBtn">Next Question</button>
+                </div>
+                <div class="self-rating">
+                    <span>Rate your answer:</span>
+                    <button class="rating-btn" data-rating="1">1</button>
+                    <button class="rating-btn" data-rating="2">2</button>
+                    <button class="rating-btn" data-rating="3">3</button>
+                    <button class="rating-btn" data-rating="4">4</button>
+                    <button class="rating-btn" data-rating="5">5</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Learnings Page -->
+        <section class="page" id="page-learnings">
+            <div class="page-header">
+                <h2>Learnings</h2>
+                <p>Everything you need to know for PM interviews, organized by category</p>
+            </div>
+            <div class="search-bar">
+                <input type="text" id="learningsSearch" placeholder="Search topics...">
+            </div>
+            <div id="learningsContent"></div>
+        </section>
+
+        <!-- Frameworks Page -->
+        <section class="page" id="page-frameworks">
+            <div class="page-header">
+                <h2>Frameworks &amp; Mental Models</h2>
+                <p>Essential frameworks every PM should know</p>
+            </div>
+            <div id="frameworksContent"></div>
+        </section>
+
+        <!-- Archive Page -->
+        <section class="page" id="page-archive">
+            <div class="page-header">
+                <h2>Practice Archive</h2>
+                <p>Review your past practice sessions</p>
+            </div>
+            <div class="archive-controls">
+                <select id="archiveFilter">
+                    <option value="all">All Categories</option>
+                </select>
+                <select id="archiveTagFilter">
+                    <option value="all">All Tags</option>
+                </select>
+                <select id="archiveSort">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="rating-high">Highest Rated</option>
+                    <option value="rating-low">Lowest Rated</option>
+                </select>
+                <button class="btn btn-secondary" id="exportArchiveBtn">Export Archive</button>
+                <button class="btn btn-danger" id="clearArchiveBtn">Clear All</button>
+            </div>
+            <div class="archive-stats" id="archiveStats"></div>
+            <div id="archiveList"></div>
+        </section>
+    </main>
+
+    <script src="questions.js"></script>
+    <script src="learnings.js"></script>
+    <script src="frameworks.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
