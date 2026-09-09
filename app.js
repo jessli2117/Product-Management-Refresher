@@ -29,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (page === 'learnings') renderLearnings();
       if (page === 'frameworks') renderFrameworks();
       if (page === 'archive') renderArchive();
-      if (page === 'daily') renderCategoryBrowser();
     });
   });
 
@@ -51,9 +50,34 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('streakCount').textContent = state.streak;
   updateDailyProgress();
 
+  // ---- Get Random Question ----
+  function getRandomQuestion(filter) {
+    let pool = [];
+    PM_QUESTIONS.categories.forEach(cat => {
+      cat.subcategories.forEach(sub => {
+        sub.questions.forEach(q => {
+          pool.push({ ...q, category: cat.name, categoryId: cat.id, subcategory: sub.name, subcategoryId: sub.id });
+        });
+      });
+    });
+
+    if (filter && filter !== 'random') {
+      if (filter.includes('|')) {
+        const [catId, subId] = filter.split('|');
+        pool = pool.filter(q => q.categoryId === catId && q.subcategoryId === subId);
+      } else {
+        pool = pool.filter(q => q.categoryId === filter);
+      }
+    }
+
+    if (pool.length === 0) return null;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
   // ---- Sidebar Categories Navigation ----
   function renderSidebarCategories() {
     const container = document.getElementById('sidebarCategories');
+    if (!container) return;
     container.innerHTML = '';
 
     PM_QUESTIONS.categories.forEach(cat => {
@@ -89,20 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
       catDiv.appendChild(subsDiv);
       container.appendChild(catDiv);
     });
-  }
-
-  // ---- Render Category Browser ----
-  function renderCategoryBrowser() {
-    const container = document.getElementById('questionCard').parentElement;
-    container.innerHTML = '';
-
-    const intro = document.createElement('div');
-    intro.style.cssText = 'text-align:center;padding:40px;color:var(--text-secondary);';
-    intro.innerHTML = `
-      <h3>Select a Category</h3>
-      <p>Choose a category and subcategory from the left sidebar to browse questions</p>
-    `;
-    container.appendChild(intro);
   }
 
   // ---- Render Question List ----
@@ -233,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
         <button class="btn btn-primary" id="evaluateAnswerBtn">Evaluate My Answer</button>
         <button class="btn btn-secondary" id="showHideAnswerBtn">Show/Hide Answer Guide</button>
-        <button class="btn btn-accent" id="nextQuestionBrowserBtn">Back to Category</button>
+        <button class="btn btn-accent" id="nextQuestionBrowserBtn">More Practice</button>
       </div>
 
       <div style="display:flex;align-items:center;gap:12px;">
@@ -258,17 +268,13 @@ document.addEventListener('DOMContentLoaded', () => {
       evaluateAnswer(userAnswer, q);
     });
 
+    const answerBox = combined.querySelector('[style*="background:var(--bg-primary)"]');
     document.getElementById('showHideAnswerBtn').addEventListener('click', () => {
-      const box = combined.querySelector('[style*="background:var(--bg-primary)"]');
-      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+      answerBox.style.display = answerBox.style.display === 'none' ? 'block' : 'none';
     });
 
     document.getElementById('nextQuestionBrowserBtn').addEventListener('click', () => {
-      if (state.selectedCategory && state.selectedSubcategory) {
-        renderQuestionList(state.selectedCategory, state.selectedSubcategory);
-      } else {
-        renderCategoryBrowser();
-      }
+      renderCategoryBrowser();
     });
 
     document.querySelectorAll('.rating-btn').forEach(btn => {
@@ -316,6 +322,20 @@ document.addEventListener('DOMContentLoaded', () => {
       li.textContent = r;
       resourcesList.appendChild(li);
     });
+  }
+
+  // ---- Render Category Browser ----
+  function renderCategoryBrowser() {
+    const container = document.getElementById('questionCard').parentElement;
+    container.innerHTML = '';
+
+    const intro = document.createElement('div');
+    intro.style.cssText = 'text-align:center;padding:40px;color:var(--text-secondary);';
+    intro.innerHTML = `
+      <h3>Browse More Questions</h3>
+      <p>Select a category and subcategory from the left sidebar to see all available questions</p>
+    `;
+    container.appendChild(intro);
   }
 
   // ---- Evaluate Answer ----
@@ -936,5 +956,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---- Initial Load ----
   renderSidebarCategories();
-  renderCategoryBrowser();
+  const dailyQuestion = getRandomQuestion('random');
+  if (dailyQuestion) {
+    displayQuestion(dailyQuestion);
+  }
 });
