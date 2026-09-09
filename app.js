@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedSubcategory: null
   };
 
+  const dailyPageContent = document.getElementById('page-daily');
+  const todayKey = new Date().toISOString().split('T')[0];
+
   // ---- Navigation ----
   const navLinks = document.querySelectorAll('.nav-link[data-page]');
   const pages = document.querySelectorAll('.page');
@@ -38,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   document.getElementById('todayDate').textContent = today;
 
-  const todayKey = new Date().toISOString().split('T')[0];
   if (state.lastPracticeDate && state.lastPracticeDate !== todayKey) {
     const last = new Date(state.lastPracticeDate);
     const now = new Date(todayKey);
@@ -70,8 +72,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    if (pool.length === 0) return null;
-    return pool[Math.floor(Math.random() * pool.length)];
+    return pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
+  }
+
+  // ---- Clear Daily Page Content ----
+  function clearDailyContent() {
+    const allDivs = Array.from(dailyPageContent.querySelectorAll('div'));
+    allDivs.forEach(div => {
+      if (div.id !== 'dailyProgress' && !div.className.includes('page-header') && !div.className.includes('category-selector') && div.id !== 'sidebarCategories') {
+        div.remove();
+      }
+    });
   }
 
   // ---- Sidebar Categories Navigation ----
@@ -88,7 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
       headerBtn.className = 'nav-category-header';
       headerBtn.innerHTML = `<span>${cat.name}</span><span class="nav-category-arrow">▶</span>`;
 
-      headerBtn.addEventListener('click', () => {
+      headerBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         catDiv.classList.toggle('open');
       });
 
@@ -99,12 +112,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const subBtn = document.createElement('div');
         subBtn.className = 'nav-sub-link';
         subBtn.textContent = sub.name;
-        subBtn.addEventListener('click', () => {
+        subBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
           state.selectedCategory = cat;
           state.selectedSubcategory = sub;
           renderQuestionList(cat, sub);
           document.querySelectorAll('.nav-sub-link').forEach(b => b.classList.remove('active'));
           subBtn.classList.add('active');
+          sidebar.classList.remove('open');
         });
         subsDiv.appendChild(subBtn);
       });
@@ -117,8 +133,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---- Render Question List ----
   function renderQuestionList(category, subcategory) {
-    const container = document.getElementById('questionCard').parentElement;
-    container.innerHTML = '';
+    clearDailyContent();
+
+    const container = document.createElement('div');
+    container.style.cssText = 'padding:20px 0;';
 
     const header = document.createElement('div');
     header.style.cssText = 'margin-bottom:24px;';
@@ -146,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const diffColor = q.difficulty === 1 ? '#16a34a' : q.difficulty === 2 ? '#d97706' : '#dc2626';
 
       questionCard.innerHTML = `
-        <div style="position:absolute;top:16px;right:16px;font-size:1.4rem;cursor:pointer;opacity:0.6;transition:opacity 0.2s;" class="archive-quick-btn" data-question-id="${idx}">🚩</div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
           <span style="background:var(--accent-glow);color:var(--accent-light);padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">${category.name}</span>
           <span style="background:rgba(59,130,246,0.1);color:var(--info);padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:500;">${subcategory.name}</span>
@@ -155,41 +172,35 @@ document.addEventListener('DOMContentLoaded', () => {
           </span>
         </div>
         <h4 style="margin-bottom:16px;color:var(--text-primary);">${q.question}</h4>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-          <button class="btn btn-primary" data-index="${idx}">Answer Question</button>
-          ${state.answeredToday.includes(q.question) ? '<span style="color:var(--success);font-weight:600;">✓ Answered today</span>' : ''}
-        </div>
+        <button class="btn btn-primary answer-btn">Answer Question</button>
       `;
 
-      const answerBtn = questionCard.querySelector('[data-index]');
-      answerBtn.addEventListener('click', () => {
-        displayQuestion({ ...q, category: category.name, categoryId: category.id, subcategory: subcategory.name, subcategoryId: subcategory.id });
-        document.getElementById('page-daily').scrollIntoView({ behavior: 'smooth' });
-      });
-
-      const archiveQuickBtn = questionCard.querySelector('.archive-quick-btn');
-      archiveQuickBtn.addEventListener('click', (e) => {
+      const answerBtn = questionCard.querySelector('.answer-btn');
+      answerBtn.addEventListener('click', (e) => {
+        e.preventDefault();
         e.stopPropagation();
-        archiveQuickBtn.style.opacity = '1';
-        archiveQuickBtn.style.color = 'var(--accent-light)';
-        showToast('Flag saved!');
+        displayQuestion({ ...q, category: category.name, categoryId: category.id, subcategory: subcategory.name, subcategoryId: subcategory.id });
       });
 
       container.appendChild(questionCard);
     });
+
+    dailyPageContent.appendChild(container);
   }
 
-  // ---- Display Question (Combined Box) ----
+  // ---- Display Question ----
   function displayQuestion(q) {
     state.currentQuestion = q;
     state.currentRating = 0;
     state.simulationStep = 0;
 
-    const container = document.getElementById('questionCard').parentElement;
-    container.innerHTML = '';
+    clearDailyContent();
 
     const diffLabel = ['Easy', 'Medium', 'Hard'][q.difficulty - 1];
     const diffColor = q.difficulty === 1 ? '#16a34a' : q.difficulty === 2 ? '#d97706' : '#dc2626';
+
+    const container = document.createElement('div');
+    container.style.cssText = 'padding:20px 0;';
 
     const combined = document.createElement('div');
     combined.className = 'question-practice-card';
@@ -203,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     combined.innerHTML = `
-      <div style="position:absolute;top:16px;right:16px;font-size:1.6rem;cursor:pointer;opacity:0.6;transition:opacity 0.2s;" class="archive-icon-btn-quick" title="Save to Archive">🚩</div>
+      <button class="archive-icon-btn" id="saveToArchiveBtn" title="Save to Archive" style="position:absolute;top:16px;right:16px;">💾 Save</button>
 
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
         <span style="background:var(--accent-glow);color:var(--accent-light);padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">${q.category}</span>
@@ -215,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       <h2 style="margin-bottom:24px;line-height:1.6;">${q.question}</h2>
 
-      <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:24px;">
+      <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:24px;" id="answerGuideBox">
         <div class="tips-card" style="background:transparent;border:none;padding:0;margin-bottom:20px;border-left:none;">
           <h4 style="margin-bottom:12px;">How to Impress the Interviewer</h4>
           <ul id="impressTips"></ul>
@@ -243,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
         <button class="btn btn-primary" id="evaluateAnswerBtn">Evaluate My Answer</button>
         <button class="btn btn-secondary" id="showHideAnswerBtn">Show/Hide Answer Guide</button>
-        <button class="btn btn-accent" id="nextQuestionBrowserBtn">More Practice</button>
+        <button class="btn btn-accent" id="moreQuestionsBtn">More Practice</button>
       </div>
 
       <div style="display:flex;align-items:center;gap:12px;">
@@ -259,6 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     container.appendChild(combined);
+    dailyPageContent.appendChild(container);
 
     renderAnswerGuide(q);
 
@@ -268,13 +280,13 @@ document.addEventListener('DOMContentLoaded', () => {
       evaluateAnswer(userAnswer, q);
     });
 
-    const answerBox = combined.querySelector('[style*="background:var(--bg-primary)"]');
+    const answerBox = document.getElementById('answerGuideBox');
     document.getElementById('showHideAnswerBtn').addEventListener('click', () => {
       answerBox.style.display = answerBox.style.display === 'none' ? 'block' : 'none';
     });
 
-    document.getElementById('nextQuestionBrowserBtn').addEventListener('click', () => {
-      renderCategoryBrowser();
+    document.getElementById('moreQuestionsBtn').addEventListener('click', () => {
+      clearDailyContent();
     });
 
     document.querySelectorAll('.rating-btn').forEach(btn => {
@@ -285,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    document.querySelector('.archive-icon-btn-quick').addEventListener('click', () => {
+    document.getElementById('saveToArchiveBtn').addEventListener('click', () => {
       saveToArchive();
     });
   }
@@ -322,20 +334,6 @@ document.addEventListener('DOMContentLoaded', () => {
       li.textContent = r;
       resourcesList.appendChild(li);
     });
-  }
-
-  // ---- Render Category Browser ----
-  function renderCategoryBrowser() {
-    const container = document.getElementById('questionCard').parentElement;
-    container.innerHTML = '';
-
-    const intro = document.createElement('div');
-    intro.style.cssText = 'text-align:center;padding:40px;color:var(--text-secondary);';
-    intro.innerHTML = `
-      <h3>Browse More Questions</h3>
-      <p>Select a category and subcategory from the left sidebar to see all available questions</p>
-    `;
-    container.appendChild(intro);
   }
 
   // ---- Evaluate Answer ----
@@ -415,40 +413,36 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
 
-    document.getElementById('questionCard').parentElement.appendChild(evalDiv);
+    dailyPageContent.appendChild(evalDiv);
 
     const wellList = document.getElementById('evalWellList');
     const missingList = document.getElementById('evalMissingList');
     const improveList = document.getElementById('evalImproveList');
 
-    if (matched.length > 0) {
-      matched.forEach(m => addLi(wellList, `You covered "${m.keyword}" — ${m.context}`));
-    }
+    if (matched.length > 0) matched.forEach(m => addLi(wellList, `You covered "${m.keyword}"`));
     if (wordCount >= 100) addLi(wellList, 'Good depth — your answer has substantive detail.');
     if (structureScore >= 60) addLi(wellList, 'Your answer shows structured thinking.');
-    if (userLower.includes('metric') || userLower.includes('measure')) addLi(wellList, 'Great mentioning metrics — interviewers love data-driven thinking.');
-    if (userLower.includes('trade-off') || userLower.includes('however')) addLi(wellList, 'You acknowledged trade-offs — shows mature product thinking.');
-    if (userLower.includes('user') || userLower.includes('customer')) addLi(wellList, 'You mentioned the user/customer — keeping them central is key.');
-    if (wellList.children.length === 0) addLi(wellList, 'You made an attempt — that\'s the first step!');
+    if (userLower.includes('metric') || userLower.includes('measure')) addLi(wellList, 'Great mentioning metrics — data-driven thinking.');
+    if (userLower.includes('trade-off') || userLower.includes('however')) addLi(wellList, 'You acknowledged trade-offs.');
+    if (userLower.includes('user') || userLower.includes('customer')) addLi(wellList, 'You kept the user central.');
+    if (wellList.children.length === 0) addLi(wellList, 'You made an attempt — first step!');
 
-    if (missing.length > 0) {
-      missing.forEach(m => addLi(missingList, `Consider covering "${m.keyword}" — ${m.context}`));
-    }
+    if (missing.length > 0) missing.forEach(m => addLi(missingList, `Consider covering "${m.keyword}"`));
     if (wordCount < 50) addLi(missingList, 'Your answer is quite short. Aim for 100-200 words.');
-    if (!userLower.includes('metric') && !userLower.includes('measure')) addLi(missingList, 'Mention success metrics — define how you\'d measure success.');
-    if (!userLower.includes('trade-off') && !userLower.includes('risk')) addLi(missingList, 'Consider discussing trade-offs or risks.');
-    if (structureScore < 40) addLi(missingList, 'Your answer lacks clear structure. Use a framework to organize your thoughts.');
-    if (missingList.children.length === 0) addLi(missingList, 'Solid coverage! Review the answer guide for nuances.');
+    if (!userLower.includes('metric') && !userLower.includes('measure')) addLi(missingList, 'Mention success metrics.');
+    if (!userLower.includes('trade-off') && !userLower.includes('risk')) addLi(missingList, 'Discuss trade-offs or risks.');
+    if (structureScore < 40) addLi(missingList, 'Your answer lacks structure. Use a framework.');
+    if (missingList.children.length === 0) addLi(missingList, 'Solid coverage!');
 
-    addLi(improveList, `Use the ${question.framework} framework to structure your answer.`);
-    addLi(improveList, `Make sure to cover: ${question.steps.map(s => s.title).join(' → ')}`);
-    if (wordCount < 100) addLi(improveList, 'Expand your answer with specific examples and data points.');
-    if (!userLower.includes('clarif')) addLi(improveList, 'Start by asking clarifying questions — shows structured thinking.');
-    addLi(improveList, 'Practice this question again tomorrow and compare your improvement.');
+    addLi(improveList, `Use the ${question.framework} framework.`);
+    addLi(improveList, `Cover: ${question.steps.map(s => s.title).join(' → ')}`);
+    if (wordCount < 100) addLi(improveList, 'Add specific examples and data points.');
+    if (!userLower.includes('clarif')) addLi(improveList, 'Start by asking clarifying questions.');
+    addLi(improveList, 'Practice this again tomorrow.');
 
     document.getElementById('startSimulationBtn').addEventListener('click', () => startSimulation(question));
 
-    evalDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    evalDiv.scrollIntoView({ behavior: 'smooth' });
 
     if (!state.answeredToday.includes(question.question)) {
       state.answeredToday.push(question.question);
@@ -466,22 +460,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function extractKeywords(question) {
     const keywords = [];
     question.steps.forEach(step => {
-      keywords.push({ keyword: step.title, context: `Part of step: "${step.title}" — ${step.detail.substring(0, 80)}...` });
+      keywords.push({ keyword: step.title, context: step.detail.substring(0, 80) });
     });
     if (question.framework) {
-      const fwName = question.framework.split('(')[0].split(':')[0].trim();
-      keywords.push({ keyword: fwName, context: 'The recommended framework for this question type.' });
+      keywords.push({ keyword: question.framework.split('(')[0].trim(), context: 'Recommended framework' });
     }
-    const importantTerms = [];
-    question.steps.forEach(step => {
-      const detail = step.detail.toLowerCase();
-      ['metric', 'user', 'mvp', 'trade-off', 'prioriti', 'segment', 'hypothesis', 'roi', 'funnel', 'retention', 'churn', 'conversion'].forEach(term => {
-        if (detail.includes(term) && !importantTerms.includes(term)) {
-          importantTerms.push(term);
-          keywords.push({ keyword: term, context: `Important concept mentioned in the model answer.` });
-        }
-      });
-    });
     return keywords;
   }
 
@@ -492,8 +475,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (lines.length >= 5) score += 10;
     if (answer.match(/\d+[\.\)]/g)) score += 20;
     if (answer.match(/^[-•*]\s/gm)) score += 15;
-    if (answer.toLowerCase().includes('first') || answer.toLowerCase().includes('step 1')) score += 10;
-    if (answer.toLowerCase().includes('then') || answer.toLowerCase().includes('next') || answer.toLowerCase().includes('finally')) score += 15;
+    if (answer.toLowerCase().includes('first')) score += 10;
+    if (answer.toLowerCase().includes('then') || answer.toLowerCase().includes('next')) score += 15;
     const stepsCovered = question.steps.filter(s => answer.toLowerCase().includes(s.title.toLowerCase().split(' ')[0]));
     score += Math.round((stepsCovered.length / question.steps.length) * 20);
     return Math.min(100, score);
@@ -512,7 +495,6 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="sim-card">
         <div class="sim-header">
           <h4>Step-by-Step Simulation</h4>
-          <p class="sim-subtitle">Work through the answer one step at a time.</p>
           <div class="sim-progress">
             <div class="sim-progress-bar" id="simProgressBar" style="width:0%"></div>
           </div>
@@ -528,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
 
-    document.getElementById('questionCard').parentElement.appendChild(simDiv);
+    dailyPageContent.appendChild(simDiv);
 
     const simStepContainer = document.getElementById('simStepContainer');
     const simProgressBar = document.getElementById('simProgressBar');
@@ -552,7 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="sim-step-body">
             <h5>${step.title}</h5>
             <p class="sim-step-prompt">How would you approach this step?</p>
-            <textarea class="sim-textarea" id="simStepAnswer" placeholder="Type your answer for this step...">${simAnswers[state.simulationStep] || ''}</textarea>
+            <textarea class="sim-textarea" id="simStepAnswer" placeholder="Type your answer...">${simAnswers[state.simulationStep] || ''}</textarea>
             <div class="sim-model-answer" id="simModelAnswer" style="display:none">
               <h5>Model Answer</h5>
               <p>${step.detail}</p>
@@ -571,38 +553,29 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSimStep();
 
     simCheckBtn.addEventListener('click', () => {
-      const textarea = document.getElementById('simStepAnswer');
-      const userText = textarea.value.trim();
+      const userText = document.getElementById('simStepAnswer').value.trim();
       simAnswers[state.simulationStep] = userText;
 
       const step = question.steps[state.simulationStep];
-      const modelAnswer = document.getElementById('simModelAnswer');
-      const feedback = document.getElementById('simStepFeedback');
-
-      modelAnswer.style.display = 'block';
+      document.getElementById('simModelAnswer').style.display = 'block';
 
       if (!userText) {
-        feedback.innerHTML = '<p class="sim-feedback-note">You skipped this step. Review the model answer above.</p>';
+        document.getElementById('simStepFeedback').innerHTML = '<p class="sim-feedback-note">Review the model answer above.</p>';
       } else {
         const stepKeywords = step.detail.toLowerCase().split(/\s+/).filter(w => w.length > 4);
-        const uniqueKeywords = [...new Set(stepKeywords)].slice(0, 8);
-        const userLower = userText.toLowerCase();
-        const hits = uniqueKeywords.filter(kw => userLower.includes(kw));
-        const hitRate = uniqueKeywords.length > 0 ? hits.length / uniqueKeywords.length : 0;
+        const hits = stepKeywords.filter(kw => userText.toLowerCase().includes(kw));
+        const hitRate = hits.length / Math.max(stepKeywords.length, 1);
 
-        let feedbackHtml = '';
-        if (hitRate >= 0.5) {
-          feedbackHtml = '<p class="sim-feedback-good">Strong answer! You covered the key concepts.</p>';
-        } else if (hitRate >= 0.25) {
-          feedbackHtml = '<p class="sim-feedback-okay">Decent start. Compare with the model above.</p>';
-        } else {
-          feedbackHtml = '<p class="sim-feedback-weak">This step needs more work. Study the model answer.</p>';
-        }
-        if (hits.length > 0) feedbackHtml += `<p class="sim-feedback-detail">Key concepts you covered: ${hits.join(', ')}</p>`;
-        feedback.innerHTML = feedbackHtml;
+        let html = '';
+        if (hitRate >= 0.5) html = '<p class="sim-feedback-good">Strong answer!</p>';
+        else if (hitRate >= 0.25) html = '<p class="sim-feedback-okay">Good start. Compare with model.</p>';
+        else html = '<p class="sim-feedback-weak">Review the model answer.</p>';
+
+        if (hits.length > 0) html += `<p class="sim-feedback-detail">Key concepts: ${hits.join(', ')}</p>`;
+        document.getElementById('simStepFeedback').innerHTML = html;
       }
 
-      feedback.style.display = 'block';
+      document.getElementById('simStepFeedback').style.display = 'block';
       simCheckBtn.style.display = 'none';
 
       if (state.simulationStep < question.steps.length - 1) {
@@ -628,38 +601,29 @@ document.addEventListener('DOMContentLoaded', () => {
       simProgressBar.style.width = '100%';
       simProgressText.textContent = 'Simulation Complete!';
 
-      let summaryHtml = '<div class="sim-summary"><h4>Simulation Summary</h4>';
+      let html = '<div class="sim-summary"><h4>Summary</h4>';
       question.steps.forEach((step, i) => {
         const userAns = simAnswers[i] || '<em>(skipped)</em>';
-        summaryHtml += `
+        html += `
           <div class="sim-summary-step">
             <div class="sim-summary-step-header">
               <span class="step-number">${i + 1}</span>
               <h5>${step.title}</h5>
             </div>
             <div class="sim-summary-columns">
-              <div class="sim-summary-col">
-                <h6>Your Answer</h6>
-                <p>${userAns}</p>
-              </div>
-              <div class="sim-summary-col model">
-                <h6>Model Answer</h6>
-                <p>${step.detail}</p>
-              </div>
+              <div class="sim-summary-col"><h6>Your Answer</h6><p>${userAns}</p></div>
+              <div class="sim-summary-col model"><h6>Model Answer</h6><p>${step.detail}</p></div>
             </div>
           </div>`;
       });
-      summaryHtml += '<p class="sim-summary-tip">Review the gaps between your answers and the model.</p>';
-      summaryHtml += '</div>';
+      html += '</div>';
 
-      simStepContainer.innerHTML = summaryHtml;
+      simStepContainer.innerHTML = html;
       simCheckBtn.style.display = 'none';
       simNextBtn.style.display = 'none';
       simFinishBtn.style.display = 'none';
       simPrevBtn.style.display = 'none';
     });
-
-    simDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   // ---- Save to Archive ----
@@ -713,21 +677,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderArchive() {
     let items = [...state.archive];
 
-    const filterVal = archiveFilter.value;
-    if (filterVal !== 'all') items = items.filter(i => i.categoryId === filterVal);
-
-    const tagFilterVal = archiveTagFilter.value;
-    if (tagFilterVal !== 'all') items = items.filter(i => (i.tags || []).includes(tagFilterVal));
+    if (archiveFilter.value !== 'all') items = items.filter(i => i.categoryId === archiveFilter.value);
+    if (archiveTagFilter.value !== 'all') items = items.filter(i => (i.tags || []).includes(archiveTagFilter.value));
 
     const searchVal = (document.getElementById('archiveSearch') || {}).value || '';
     if (searchVal) {
       const s = searchVal.toLowerCase();
-      items = items.filter(i =>
-        i.question.toLowerCase().includes(s) ||
-        i.userAnswer.toLowerCase().includes(s) ||
-        i.category.toLowerCase().includes(s) ||
-        i.subcategory.toLowerCase().includes(s)
-      );
+      items = items.filter(i => i.question.toLowerCase().includes(s) || i.userAnswer.toLowerCase().includes(s));
     }
 
     const sortVal = document.getElementById('archiveSort').value;
@@ -832,7 +788,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('clearArchiveBtn').addEventListener('click', () => {
-    if (confirm('Are you sure you want to clear your entire archive? This cannot be undone.')) {
+    if (confirm('Clear your entire archive? This cannot be undone.')) {
       state.archive = [];
       localStorage.setItem('pmArchive', '[]');
       renderArchive();
@@ -942,8 +898,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateDailyProgress() {
     const progressDiv = document.getElementById('dailyProgress');
     if (progressDiv) {
-      const count = state.answeredToday.length;
-      document.getElementById('dailyCount').textContent = count;
+      document.getElementById('dailyCount').textContent = state.answeredToday.length;
     }
   }
 
@@ -957,7 +912,5 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---- Initial Load ----
   renderSidebarCategories();
   const dailyQuestion = getRandomQuestion('random');
-  if (dailyQuestion) {
-    displayQuestion(dailyQuestion);
-  }
+  if (dailyQuestion) displayQuestion(dailyQuestion);
 });
