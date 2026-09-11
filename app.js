@@ -8,7 +8,10 @@ document.addEventListener('DOMContentLoaded', () => {
     simulationStep: 0,
     answeredToday: JSON.parse(localStorage.getItem('pmAnsweredToday') || '[]'),
     selectedCategory: null,
-    selectedSubcategory: null
+    selectedSubcategory: null,
+    completedQuestions: JSON.parse(localStorage.getItem('pmCompletedQuestions') || '{}'),
+    viewMode: 'daily', // 'daily', 'table', 'question'
+    currentQuestions: {} // Stores questions for current subcategory
   };
 
   const dailyPageContent = document.getElementById('page-daily');
@@ -75,6 +78,25 @@ document.addEventListener('DOMContentLoaded', () => {
     return pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
   }
 
+  // ---- Generate Questions for Subcategory ----
+  function getSubcategoryQuestions(category, subcategory) {
+    const key = `${category.id}|${subcategory.id}`;
+    if (!state.completedQuestions[key]) {
+      state.completedQuestions[key] = [];
+    }
+
+    const questions = subcategory.questions.map((q, idx) => ({
+      ...q,
+      category: category.name,
+      categoryId: category.id,
+      subcategory: subcategory.name,
+      subcategoryId: subcategory.id,
+      qIndex: idx
+    }));
+
+    return questions;
+  }
+
   // ---- Clear Daily Page Content ----
   function clearDailyContent() {
     const allDivs = Array.from(dailyPageContent.querySelectorAll('div'));
@@ -117,7 +139,8 @@ document.addEventListener('DOMContentLoaded', () => {
           e.stopPropagation();
           state.selectedCategory = cat;
           state.selectedSubcategory = sub;
-          renderQuestionList(cat, sub);
+          state.currentQuestions = getSubcategoryQuestions(cat, sub);
+          renderQuestionTable(cat, sub);
           document.querySelectorAll('.nav-sub-link').forEach(b => b.classList.remove('active'));
           subBtn.classList.add('active');
           sidebar.classList.remove('open');
@@ -131,61 +154,93 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ---- Render Question List ----
-  function renderQuestionList(category, subcategory) {
+  // ---- Render Question Table ----
+  function renderQuestionTable(category, subcategory) {
     clearDailyContent();
+    state.viewMode = 'table';
 
     const container = document.createElement('div');
     container.style.cssText = 'padding:20px 0;';
 
     const header = document.createElement('div');
-    header.style.cssText = 'margin-bottom:24px;';
+    header.style.cssText = 'margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;';
     header.innerHTML = `
-      <h3>${category.name}</h3>
-      <p style="color:var(--text-secondary);font-size:0.95rem;">${subcategory.name}</p>
+      <div>
+        <h3>${category.name}</h3>
+        <p style="color:var(--text-secondary);font-size:0.95rem;">${subcategory.name}</p>
+      </div>
+      <button class="btn btn-secondary" id="backFromTableBtn">← Back</button>
     `;
     container.appendChild(header);
 
-    subcategory.questions.forEach((q, idx) => {
-      const questionCard = document.createElement('div');
-      questionCard.className = 'question-list-item';
-      questionCard.style.cssText = `
-        background:var(--bg-card);
-        border:1px solid var(--border);
-        border-radius:var(--radius);
-        padding:24px;
-        margin-bottom:16px;
-        cursor:pointer;
-        transition:all 0.2s ease;
-        position:relative;
-      `;
+    const tableContainer = document.createElement('div');
+    tableContainer.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;';
 
+    state.currentQuestions.forEach((q, idx) => {
       const diffLabel = ['Easy', 'Medium', 'Hard'][q.difficulty - 1];
       const diffColor = q.difficulty === 1 ? '#16a34a' : q.difficulty === 2 ? '#d97706' : '#dc2626';
 
-      questionCard.innerHTML = `
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
-          <span style="background:var(--accent-glow);color:var(--accent-light);padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">${category.name}</span>
-          <span style="background:rgba(59,130,246,0.1);color:var(--info);padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:500;">${subcategory.name}</span>
-          <span style="background:rgba(${diffColor === '#16a34a' ? '22,163,74' : diffColor === '#d97706' ? '217,119,6' : '220,38,38'},0.1);color:${diffColor};padding:3px 10px;border-radius:12px;font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">
-            ${diffLabel}
-          </span>
-        </div>
-        <h4 style="margin-bottom:16px;color:var(--text-primary);">${q.question}</h4>
-        <button class="btn btn-primary answer-btn">Answer Question</button>
+      const key = `${category.id}|${subcategory.id}|${idx}`;
+      const isCompleted = state.completedQuestions[`${category.id}|${subcategory.id}`]?.includes(key);
+
+      const row = document.createElement('div');
+      row.style.cssText = `
+        padding:16px 20px;
+        border-bottom:1px solid var(--border);
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        ${isCompleted ? 'background:rgba(22,163,74,0.05);' : ''}
       `;
 
-      const answerBtn = questionCard.querySelector('.answer-btn');
-      answerBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        displayQuestion({ ...q, category: category.name, categoryId: category.id, subcategory: subcategory.name, subcategoryId: subcategory.id });
+      if (idx === state.currentQuestions.length - 1) row.style.borderBottom = 'none';
+
+      row.innerHTML = `
+        <div style="flex:1;">
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <span style="background:rgba(${diffColor === '#16a34a' ? '22,163,74' : diffColor === '#d97706' ? '217,119,6' : '220,38,38'},0.1);color:${diffColor};padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:600;text-transform:uppercase;">
+              ${diffLabel}
+            </span>
+            ${isCompleted ? '<span style="color:var(--success);font-weight:600;font-size:0.8rem;">✓ Completed</span>' : ''}
+          </div>
+          <p style="color:var(--text-primary);font-size:0.95rem;">${q.question}</p>
+        </div>
+        <div style="display:flex;gap:8px;margin-left:16px;">
+          <button class="btn btn-primary open-question-btn" data-index="${idx}">Open</button>
+          <button class="btn btn-success mark-complete-btn" data-index="${idx}" style="${isCompleted ? 'opacity:0.5;' : ''}">${isCompleted ? '✓' : 'Done'}</button>
+        </div>
+      `;
+
+      const openBtn = row.querySelector('.open-question-btn');
+      openBtn.addEventListener('click', () => displayQuestion(q));
+
+      const completeBtn = row.querySelector('.mark-complete-btn');
+      completeBtn.addEventListener('click', () => {
+        const subKey = `${category.id}|${subcategory.id}`;
+        if (!state.completedQuestions[subKey]) {
+          state.completedQuestions[subKey] = [];
+        }
+
+        const qKey = `${category.id}|${subcategory.id}|${idx}`;
+        if (!state.completedQuestions[subKey].includes(qKey)) {
+          state.completedQuestions[subKey].push(qKey);
+          localStorage.setItem('pmCompletedQuestions', JSON.stringify(state.completedQuestions));
+          showToast('Question marked complete!');
+          renderQuestionTable(category, subcategory);
+        }
       });
 
-      container.appendChild(questionCard);
+      tableContainer.appendChild(row);
     });
 
+    container.appendChild(tableContainer);
     dailyPageContent.appendChild(container);
+
+    document.getElementById('backFromTableBtn').addEventListener('click', () => {
+      clearDailyContent();
+      state.viewMode = 'daily';
+      document.querySelectorAll('.nav-sub-link').forEach(b => b.classList.remove('active'));
+    });
   }
 
   // ---- Display Question ----
@@ -193,6 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
     state.currentQuestion = q;
     state.currentRating = 0;
     state.simulationStep = 0;
+    state.viewMode = 'question';
 
     clearDailyContent();
 
@@ -214,7 +270,10 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     combined.innerHTML = `
-      <button class="archive-icon-btn" id="saveToArchiveBtn" title="Save to Archive" style="position:absolute;top:16px;right:16px;">💾 Save</button>
+      <div style="position:absolute;top:16px;right:16px;display:flex;gap:8px;">
+        <button class="archive-icon-btn" id="saveToArchiveBtn" title="Save to Archive">💾 Save</button>
+        <button class="btn btn-secondary" id="backToTableBtn" style="padding:8px 16px;">← Back</button>
+      </div>
 
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
         <span style="background:var(--accent-glow);color:var(--accent-light);padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">${q.category}</span>
@@ -254,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
         <button class="btn btn-primary" id="evaluateAnswerBtn">Evaluate My Answer</button>
         <button class="btn btn-secondary" id="showHideAnswerBtn">Show/Hide Answer Guide</button>
-        <button class="btn btn-accent" id="moreQuestionsBtn">More Practice</button>
+        <button class="btn btn-success" id="markCompleteBtn">✓ Mark Completed</button>
       </div>
 
       <div style="display:flex;align-items:center;gap:12px;">
@@ -285,8 +344,26 @@ document.addEventListener('DOMContentLoaded', () => {
       answerBox.style.display = answerBox.style.display === 'none' ? 'block' : 'none';
     });
 
-    document.getElementById('moreQuestionsBtn').addEventListener('click', () => {
-      clearDailyContent();
+    document.getElementById('backToTableBtn').addEventListener('click', () => {
+      if (state.selectedCategory && state.selectedSubcategory) {
+        renderQuestionTable(state.selectedCategory, state.selectedSubcategory);
+      }
+    });
+
+    document.getElementById('markCompleteBtn').addEventListener('click', () => {
+      const subKey = `${q.categoryId}|${q.subcategoryId}`;
+      if (!state.completedQuestions[subKey]) {
+        state.completedQuestions[subKey] = [];
+      }
+      const qKey = `${q.categoryId}|${q.subcategoryId}|${q.qIndex}`;
+      if (!state.completedQuestions[subKey].includes(qKey)) {
+        state.completedQuestions[subKey].push(qKey);
+        localStorage.setItem('pmCompletedQuestions', JSON.stringify(state.completedQuestions));
+        showToast('Question marked complete!');
+        if (state.selectedCategory && state.selectedSubcategory) {
+          renderQuestionTable(state.selectedCategory, state.selectedSubcategory);
+        }
+      }
     });
 
     document.querySelectorAll('.rating-btn').forEach(btn => {
@@ -422,22 +499,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (matched.length > 0) matched.forEach(m => addLi(wellList, `You covered "${m.keyword}"`));
     if (wordCount >= 100) addLi(wellList, 'Good depth — your answer has substantive detail.');
     if (structureScore >= 60) addLi(wellList, 'Your answer shows structured thinking.');
-    if (userLower.includes('metric') || userLower.includes('measure')) addLi(wellList, 'Great mentioning metrics — data-driven thinking.');
+    if (userLower.includes('metric') || userLower.includes('measure')) addLi(wellList, 'Great mentioning metrics.');
     if (userLower.includes('trade-off') || userLower.includes('however')) addLi(wellList, 'You acknowledged trade-offs.');
     if (userLower.includes('user') || userLower.includes('customer')) addLi(wellList, 'You kept the user central.');
-    if (wellList.children.length === 0) addLi(wellList, 'You made an attempt — first step!');
+    if (wellList.children.length === 0) addLi(wellList, 'You made an attempt!');
 
     if (missing.length > 0) missing.forEach(m => addLi(missingList, `Consider covering "${m.keyword}"`));
-    if (wordCount < 50) addLi(missingList, 'Your answer is quite short. Aim for 100-200 words.');
-    if (!userLower.includes('metric') && !userLower.includes('measure')) addLi(missingList, 'Mention success metrics.');
+    if (wordCount < 50) addLi(missingList, 'Aim for 100-200 words.');
+    if (!userLower.includes('metric')) addLi(missingList, 'Mention success metrics.');
     if (!userLower.includes('trade-off') && !userLower.includes('risk')) addLi(missingList, 'Discuss trade-offs or risks.');
-    if (structureScore < 40) addLi(missingList, 'Your answer lacks structure. Use a framework.');
+    if (structureScore < 40) addLi(missingList, 'Use a framework to organize.');
     if (missingList.children.length === 0) addLi(missingList, 'Solid coverage!');
 
     addLi(improveList, `Use the ${question.framework} framework.`);
     addLi(improveList, `Cover: ${question.steps.map(s => s.title).join(' → ')}`);
-    if (wordCount < 100) addLi(improveList, 'Add specific examples and data points.');
-    if (!userLower.includes('clarif')) addLi(improveList, 'Start by asking clarifying questions.');
+    if (wordCount < 100) addLi(improveList, 'Add specific examples.');
     addLi(improveList, 'Practice this again tomorrow.');
 
     document.getElementById('startSimulationBtn').addEventListener('click', () => startSimulation(question));
@@ -460,10 +536,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function extractKeywords(question) {
     const keywords = [];
     question.steps.forEach(step => {
-      keywords.push({ keyword: step.title, context: step.detail.substring(0, 80) });
+      keywords.push({ keyword: step.title });
     });
     if (question.framework) {
-      keywords.push({ keyword: question.framework.split('(')[0].trim(), context: 'Recommended framework' });
+      keywords.push({ keyword: question.framework.split('(')[0].trim() });
     }
     return keywords;
   }
@@ -490,7 +566,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const simDiv = document.createElement('div');
     simDiv.id = 'simulationSection';
-    simDiv.className = 'simulation-section';
     simDiv.innerHTML = `
       <div class="sim-card">
         <div class="sim-header">
@@ -533,8 +608,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="sim-step-number">${state.simulationStep + 1}</div>
           <div class="sim-step-body">
             <h5>${step.title}</h5>
-            <p class="sim-step-prompt">How would you approach this step?</p>
-            <textarea class="sim-textarea" id="simStepAnswer" placeholder="Type your answer...">${simAnswers[state.simulationStep] || ''}</textarea>
+            <textarea class="sim-textarea" id="simStepAnswer" placeholder="Your answer...">${simAnswers[state.simulationStep] || ''}</textarea>
             <div class="sim-model-answer" id="simModelAnswer" style="display:none">
               <h5>Model Answer</h5>
               <p>${step.detail}</p>
@@ -556,23 +630,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const userText = document.getElementById('simStepAnswer').value.trim();
       simAnswers[state.simulationStep] = userText;
 
-      const step = question.steps[state.simulationStep];
       document.getElementById('simModelAnswer').style.display = 'block';
 
       if (!userText) {
-        document.getElementById('simStepFeedback').innerHTML = '<p class="sim-feedback-note">Review the model answer above.</p>';
+        document.getElementById('simStepFeedback').innerHTML = '<p class="sim-feedback-note">Review the model answer.</p>';
       } else {
-        const stepKeywords = step.detail.toLowerCase().split(/\s+/).filter(w => w.length > 4);
-        const hits = stepKeywords.filter(kw => userText.toLowerCase().includes(kw));
-        const hitRate = hits.length / Math.max(stepKeywords.length, 1);
-
-        let html = '';
-        if (hitRate >= 0.5) html = '<p class="sim-feedback-good">Strong answer!</p>';
-        else if (hitRate >= 0.25) html = '<p class="sim-feedback-okay">Good start. Compare with model.</p>';
-        else html = '<p class="sim-feedback-weak">Review the model answer.</p>';
-
-        if (hits.length > 0) html += `<p class="sim-feedback-detail">Key concepts: ${hits.join(', ')}</p>`;
-        document.getElementById('simStepFeedback').innerHTML = html;
+        document.getElementById('simStepFeedback').innerHTML = '<p class="sim-feedback-good">Good!</p>';
       }
 
       document.getElementById('simStepFeedback').style.display = 'block';
@@ -599,11 +662,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     simFinishBtn.addEventListener('click', () => {
       simProgressBar.style.width = '100%';
-      simProgressText.textContent = 'Simulation Complete!';
 
       let html = '<div class="sim-summary"><h4>Summary</h4>';
       question.steps.forEach((step, i) => {
-        const userAns = simAnswers[i] || '<em>(skipped)</em>';
         html += `
           <div class="sim-summary-step">
             <div class="sim-summary-step-header">
@@ -611,8 +672,8 @@ document.addEventListener('DOMContentLoaded', () => {
               <h5>${step.title}</h5>
             </div>
             <div class="sim-summary-columns">
-              <div class="sim-summary-col"><h6>Your Answer</h6><p>${userAns}</p></div>
-              <div class="sim-summary-col model"><h6>Model Answer</h6><p>${step.detail}</p></div>
+              <div class="sim-summary-col"><h6>Your Answer</h6><p>${simAnswers[i] || '<em>skipped</em>'}</p></div>
+              <div class="sim-summary-col model"><h6>Model</h6><p>${step.detail}</p></div>
             </div>
           </div>`;
       });
@@ -630,7 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function saveToArchive() {
     if (!state.currentQuestion) return;
     const userAnswer = document.getElementById('userAnswer').value.trim();
-    if (!userAnswer) { showToast('Write an answer before saving!'); return; }
+    if (!userAnswer) { showToast('Write an answer first!'); return; }
 
     const entry = {
       id: Date.now(),
@@ -715,22 +776,21 @@ document.addEventListener('DOMContentLoaded', () => {
       const searchInput = document.createElement('input');
       searchInput.type = 'text';
       searchInput.id = 'archiveSearch';
-      searchInput.placeholder = 'Search questions, answers...';
+      searchInput.placeholder = 'Search...';
       searchInput.style.cssText = 'width:100%;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);padding:12px 20px;border-radius:var(--radius);font-size:0.95rem;margin-bottom:16px;';
       listDiv.parentNode.insertBefore(searchInput, listDiv);
       searchInput.addEventListener('input', () => renderArchive());
     }
 
     if (items.length === 0) {
-      listDiv.innerHTML = `<div class="archive-empty"><h3>No entries yet</h3><p>Practice questions and save them to build your archive.</p></div>`;
+      listDiv.innerHTML = `<div class="archive-empty"><h3>No entries yet</h3></div>`;
       return;
     }
 
     listDiv.innerHTML = '';
     items.forEach(item => {
       const date = new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      const diffDots = Array.from({ length: 3 }, (_, i) => `<span class="difficulty-dot${i < item.difficulty ? ' active' : ''}" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${i < item.difficulty ? 'var(--warning)' : 'var(--border)'};margin-right:3px;"></span>`).join('');
-      const stars = item.rating > 0 ? '★'.repeat(item.rating) + '☆'.repeat(5 - item.rating) : 'Not rated';
+      const stars = item.rating > 0 ? '★'.repeat(item.rating) : 'Not rated';
 
       const div = document.createElement('div');
       div.className = 'archive-item';
@@ -739,7 +799,6 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="archive-item-badges">
             <span class="question-badge">${item.category}</span>
             <span class="question-sub-badge">${item.subcategory}</span>
-            ${diffDots}
           </div>
           <span class="archive-item-date">${date}</span>
         </div>
@@ -748,10 +807,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="archive-item-answer">
           <h5>Your Answer:</h5>
           <p>${item.userAnswer}</p>
-          <h5 style="margin-top:16px;">Model Answer Steps:</h5>
-          ${item.steps.map((s, i) => `<div class="step"><div class="step-number">${i + 1}</div><div class="step-content"><h5>${s.title}</h5><p>${s.detail}</p></div></div>`).join('')}
-          <h5 style="margin-top:16px;">Framework:</h5>
-          <p>${item.framework}</p>
           <button class="btn btn-danger" style="margin-top:12px;" onclick="deleteArchiveItem(${item.id})">Delete</button>
         </div>`;
 
@@ -768,7 +823,7 @@ document.addEventListener('DOMContentLoaded', () => {
     state.archive = state.archive.filter(i => i.id !== id);
     localStorage.setItem('pmArchive', JSON.stringify(state.archive));
     renderArchive();
-    showToast('Entry deleted');
+    showToast('Deleted');
   };
 
   archiveFilter.addEventListener('change', renderArchive);
@@ -784,15 +839,15 @@ document.addEventListener('DOMContentLoaded', () => {
     a.download = 'pm-practice-archive.json';
     a.click();
     URL.revokeObjectURL(url);
-    showToast('Archive exported!');
+    showToast('Exported!');
   });
 
   document.getElementById('clearArchiveBtn').addEventListener('click', () => {
-    if (confirm('Clear your entire archive? This cannot be undone.')) {
+    if (confirm('Clear archive?')) {
       state.archive = [];
       localStorage.setItem('pmArchive', '[]');
       renderArchive();
-      showToast('Archive cleared');
+      showToast('Cleared');
     }
   });
 
@@ -806,10 +861,7 @@ document.addEventListener('DOMContentLoaded', () => {
     PM_LEARNINGS.categories.forEach(cat => {
       let hasMatch = !searchVal;
       let filteredSubs = cat.subcategories.map(sub => {
-        const filteredItems = sub.items.filter(item => {
-          if (!searchVal) return true;
-          return item.toLowerCase().includes(searchVal) || sub.name.toLowerCase().includes(searchVal) || cat.name.toLowerCase().includes(searchVal);
-        });
+        const filteredItems = sub.items.filter(item => !searchVal || item.toLowerCase().includes(searchVal));
         if (filteredItems.length > 0) hasMatch = true;
         return { ...sub, items: filteredItems };
       }).filter(sub => sub.items.length > 0);
@@ -821,18 +873,11 @@ document.addEventListener('DOMContentLoaded', () => {
       catDiv.innerHTML = `
         <div class="learning-category-header">
           <h3>${cat.icon} ${cat.name}</h3>
-          <span class="arrow">&#9660;</span>
+          <span class="arrow">▼</span>
         </div>
         <div class="learning-category-body"></div>`;
 
       const body = catDiv.querySelector('.learning-category-body');
-
-      if (cat.description) {
-        const descP = document.createElement('p');
-        descP.style.cssText = 'padding:12px 24px 0;color:var(--text-secondary);font-size:0.9rem;';
-        descP.textContent = cat.description;
-        body.appendChild(descP);
-      }
 
       filteredSubs.forEach(sub => {
         const subDiv = document.createElement('div');
@@ -877,12 +922,39 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>`).join('')}
           </div>
           <div class="framework-details">
-            ${fw.components.map(c => `<p><strong>${c.letter} — ${c.label}:</strong> ${c.detail}</p>`).join('')}
+            ${fw.components.map(c => `<p><strong>${c.letter}:</strong> ${c.detail}</p>`).join('')}
           </div>`;
         container.appendChild(fwDiv);
       });
     });
   }
+
+  // ---- Refresh Button Handler ----
+  document.getElementById('refreshQuestionsBtn')?.addEventListener('click', () => {
+    let refreshedCount = 0;
+
+    PM_QUESTIONS.categories.forEach(cat => {
+      cat.subcategories.forEach(sub => {
+        const subKey = `${cat.id}|${sub.id}`;
+        const completedCount = (state.completedQuestions[subKey] || []).length;
+
+        if (completedCount > 0) {
+          const newQuestions = [];
+          for (let i = 0; i < completedCount; i++) {
+            const q = getRandomQuestion(cat.id + '|' + sub.id);
+            if (q) newQuestions.push(q);
+          }
+
+          // Clear completed for this subcategory and reset
+          state.completedQuestions[subKey] = [];
+          refreshedCount += newQuestions.length;
+        }
+      });
+    });
+
+    localStorage.setItem('pmCompletedQuestions', JSON.stringify(state.completedQuestions));
+    showToast(`Refreshed ${refreshedCount} questions!`);
+  });
 
   // ---- Utility ----
   function showToast(msg) {
@@ -901,13 +973,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('dailyCount').textContent = state.answeredToday.length;
     }
   }
-
-  document.getElementById('refreshQuestionsBtn')?.addEventListener('click', () => {
-    state.answeredToday = [];
-    localStorage.setItem('pmAnsweredToday', '[]');
-    updateDailyProgress();
-    showToast('Questions refreshed!');
-  });
 
   // ---- Initial Load ----
   renderSidebarCategories();
