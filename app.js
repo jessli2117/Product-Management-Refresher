@@ -285,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       <h2 style="margin-bottom:24px;line-height:1.6;">${q.question}</h2>
 
-      <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:24px;" id="answerGuideBox">
+      <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:24px;display:none;" id="answerGuideBox">
         <div class="tips-card" style="background:transparent;border:none;padding:0;margin-bottom:20px;border-left:none;">
           <h4 style="margin-bottom:12px;">How to Impress the Interviewer</h4>
           <ul id="impressTips"></ul>
@@ -392,13 +392,26 @@ document.addEventListener('DOMContentLoaded', () => {
     stepsDiv.innerHTML = '';
     q.steps.forEach((step, i) => {
       const stepEl = document.createElement('div');
-      stepEl.className = 'step';
+      stepEl.style.cssText = 'margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--border);';
+      if (i === q.steps.length - 1) stepEl.style.borderBottom = 'none';
+
       stepEl.innerHTML = `
-        <div class="step-number">${i + 1}</div>
-        <div class="step-content">
-          <h5>${step.title}</h5>
-          <p>${step.detail}</p>
-        </div>`;
+        <div style="display:flex;gap:12px;margin-bottom:12px;">
+          <div style="width:32px;height:32px;background:var(--accent);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">${i + 1}</div>
+          <div style="flex:1;">
+            <h5 style="margin-bottom:8px;">${step.title}</h5>
+            <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:12px;">${step.detail}</p>
+            <div style="background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:12px;margin-top:12px;">
+              <p style="font-size:0.8rem;font-weight:600;color:var(--accent-light);margin-bottom:8px;">Rubric - What to Aim For:</p>
+              <ul style="list-style:none;padding:0;font-size:0.85rem;">
+                <li style="padding:4px 0;color:var(--success);"><strong>✓ Excellent:</strong> Covers all key points with specific examples</li>
+                <li style="padding:4px 0;color:var(--warning);"><strong>≈ Good:</strong> Covers main points clearly and concisely</li>
+                <li style="padding:4px 0;color:var(--danger);"><strong>✗ Needs Work:</strong> Missing key points or lacks clarity</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      `;
       stepsDiv.appendChild(stepEl);
     });
 
