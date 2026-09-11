@@ -275,12 +275,16 @@ document.addEventListener('DOMContentLoaded', () => {
         <button class="btn btn-secondary" id="backToTableBtn" style="padding:8px 16px;">← Back</button>
       </div>
 
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
-        <span style="background:var(--accent-glow);color:var(--accent-light);padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">${q.category}</span>
-        <span style="background:rgba(59,130,246,0.1);color:var(--info);padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:500;">${q.subcategory}</span>
-        <span style="background:rgba(${diffColor === '#16a34a' ? '22,163,74' : diffColor === '#d97706' ? '217,119,6' : '220,38,38'},0.1);color:${diffColor};padding:3px 10px;border-radius:12px;font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-left:auto;">
-          <strong>Difficulty:</strong> ${diffLabel}
-        </span>
+      <div style="margin-bottom:20px;">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+          <span style="background:var(--accent-glow);color:var(--accent-light);padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">${q.category}</span>
+          <span style="background:rgba(59,130,246,0.1);color:var(--info);padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:500;">${q.subcategory}</span>
+        </div>
+        <div>
+          <span style="background:rgba(${diffColor === '#16a34a' ? '22,163,74' : diffColor === '#d97706' ? '217,119,6' : '220,38,38'},0.1);color:${diffColor};padding:4px 12px;border-radius:12px;font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;display:inline-block;">
+            <strong>Difficulty:</strong> ${diffLabel}
+          </span>
+        </div>
       </div>
 
       <h2 style="margin-bottom:24px;line-height:1.6;">${q.question}</h2>
@@ -401,12 +405,19 @@ document.addEventListener('DOMContentLoaded', () => {
           <div style="flex:1;">
             <h5 style="margin-bottom:8px;">${step.title}</h5>
             <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:12px;">${step.detail}</p>
-            <div style="background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:12px;margin-top:12px;">
-              <p style="font-size:0.8rem;font-weight:600;color:var(--accent-light);margin-bottom:8px;">Rubric - What to Aim For:</p>
+
+            <div style="background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:12px;margin-bottom:12px;">
+              <p style="font-size:0.8rem;font-weight:600;color:var(--accent-light);margin-bottom:8px;">📋 Mock Answer:</p>
+              <p style="font-size:0.85rem;color:var(--text-secondary);font-style:italic;line-height:1.5;">${step.detail}</p>
+            </div>
+
+            <div style="background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:12px;">
+              <p style="font-size:0.8rem;font-weight:600;color:var(--success);margin-bottom:8px;">📊 Scoring Rubric:</p>
               <ul style="list-style:none;padding:0;font-size:0.85rem;">
-                <li style="padding:4px 0;color:var(--success);"><strong>✓ Excellent:</strong> Covers all key points with specific examples</li>
-                <li style="padding:4px 0;color:var(--warning);"><strong>≈ Good:</strong> Covers main points clearly and concisely</li>
-                <li style="padding:4px 0;color:var(--danger);"><strong>✗ Needs Work:</strong> Missing key points or lacks clarity</li>
+                <li style="padding:4px 0;"><strong>75-100%:</strong> Comprehensive answer with specific examples and metrics</li>
+                <li style="padding:4px 0;"><strong>50-74%:</strong> Good coverage of main points with some examples</li>
+                <li style="padding:4px 0;"><strong>25-49%:</strong> Addresses key points but lacks depth or specificity</li>
+                <li style="padding:4px 0;"><strong>0-24%:</strong> Missing key points or unclear explanation</li>
               </ul>
             </div>
           </div>
@@ -419,9 +430,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const resourcesList = document.getElementById('resourcesList');
     resourcesList.innerHTML = '';
+    const resourceKeyPoints = {
+      'CIRCLES Method': ['Define the product clearly', 'Identify target users', 'List priorities for users', 'Evaluate solutions against priorities', 'Discuss trade-offs', 'Summarize learnings'],
+      'STAR Method': ['Situation/Task context', 'Action taken', 'Result achieved', 'What you learned'],
+      'Estimation Framework': ['Break problem into components', 'Gather market sizing data', 'Validate assumptions', 'Present with confidence intervals'],
+      'RICE Scoring': ['Reach: total users affected', 'Impact: magnitude of effect', 'Confidence: certainty level', 'Effort: total person-months'],
+      'OKRs': ['Objectives: what you want to achieve', 'Key Results: how you measure success', 'Keep 3-5 per quarter', 'Regularly track progress'],
+      'User Research': ['Conduct 5-10 user interviews', 'Identify pain points and patterns', 'Document user personas', 'Create user journey maps'],
+      'Competitive Analysis': ['Map 3-5 main competitors', 'Document strengths and weaknesses', 'Identify market gaps', 'Find your differentiation']
+    };
+
     q.resources.forEach(r => {
       const li = document.createElement('li');
-      li.textContent = r;
+      const baseResource = r.split(' - ')[0].trim();
+      const keyPoints = resourceKeyPoints[baseResource] || ['• Research this topic thoroughly', '• Focus on practical applications'];
+
+      li.innerHTML = `
+        <strong>${baseResource}</strong><br/>
+        <span style="color:var(--text-secondary);font-size:0.85rem;">
+          ${keyPoints.map(kp => `• ${kp}`).join('<br/>')}
+        </span>
+      `;
       resourcesList.appendChild(li);
     });
   }
